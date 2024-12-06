@@ -1,0 +1,11 @@
+
+# pixi environments
+.pixi
+*.egg-info
+venv/
+**/__pycache__/
+.vscode
+data/
+*.parquet
+*.csv
+lightning_logs/
