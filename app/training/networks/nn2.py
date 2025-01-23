@@ -16,7 +16,7 @@ class StretchedSigmoid(nn.Module):
     
 
 class NN2(pl.LightningModule):
-    def __init__(self,input_size=133, hidden_size=1024, output_size=10):
+    def __init__(self,input_size=133, hidden_size=1024, output_size=10, lr=0.001):
         """
         A feedforward neural network with a residual block and additional processing layers. 
         Designed to output the means and variances for the Levy processes
@@ -39,36 +39,45 @@ class NN2(pl.LightningModule):
         """
         super(NN2, self).__init__()
         assert output_size % 2 == 0, f"output size {output_size}, is not even!"
+        self.save_hyperparameters()
         self.hidden_size = hidden_size
-        self.activation = nn.ELU()
         self.mse_loss = nn.MSELoss()
+        self.lr = lr
         
         # Input layer
         self.input_head = nn.Sequential(
             nn.Linear(input_size, hidden_size),
             nn.BatchNorm1d(hidden_size),
-            self.activation
+            nn.ELU()
         )
         
         # Four hidden layers
         self.hidden_residual_block = nn.Sequential(
             nn.Linear(hidden_size, hidden_size),
             nn.BatchNorm1d(hidden_size),
-            self.activation,
+            nn.ELU(),
             nn.Linear(hidden_size, hidden_size),
             nn.BatchNorm1d(hidden_size),
-            self.activation,
+            nn.ELU(),
             nn.Linear(hidden_size, hidden_size),
             nn.BatchNorm1d(hidden_size),
-            self.activation,
+            nn.ELU(),
             nn.Linear(hidden_size, hidden_size),
             nn.BatchNorm1d(hidden_size),
-            self.activation,
+            nn.ELU(),
         )
+        
+        # Second interpretation
+        # self.hidden_residual_block = nn.Sequential(
+        #     nn.Linear(hidden_size, hidden_size),
+        #     nn.Linear(hidden_size, hidden_size),
+        #     nn.BatchNorm1d(hidden_size),
+        #     nn.ELU()
+        # )
         
         # Additional layers after the main residual connection
         self.output_layer1 = nn.Linear(hidden_size, output_size)
-        self.batch_norm = nn.BatchNorm1d(output_size)
+        self.batch_norm2 = nn.BatchNorm1d(output_size)
         
         # Final concatenation layers
         self.nu_layer = nn.Sequential(
@@ -89,8 +98,8 @@ class NN2(pl.LightningModule):
         x = self.hidden_residual_block(residual) + residual 
         
         # Additional processing layers
-        x = self.output_layer1(self.activation(x))
-        x = self.batch_norm(x)
+        x = self.output_layer1(nn.ELU()(x))
+        x = self.batch_norm2(x)
         
         # Dense layers before concatenation
         nus = self.nu_layer(x)
@@ -122,4 +131,4 @@ class NN2(pl.LightningModule):
         return loss
     
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=0.001)
+        return torch.optim.Adam(self.parameters(), lr=self.lr)

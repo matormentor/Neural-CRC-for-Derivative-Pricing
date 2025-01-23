@@ -1,7 +1,9 @@
+from logging.handlers import WatchedFileHandler
 from typing import Any, Dict
 from logging import Logger
 
 from QuantLib import Date, Settings, Actual365Fixed, FlatForward, YieldTermStructureHandle
+from numpy import isnan
 
 from app.data_gen.models import GenerationParams
 from app.data_gen.quantlib_setup.engine_setup import get_bates_engine
@@ -66,8 +68,6 @@ def generate_130_point_iv_surface(spot_price, moneyness_grid, tau_grid, jumps_nu
         
     iv_surface = []
     
-    error = False  # Flag for error tracking
-    
     for tau in tau_grid:
         nu, delta = get_jump_parameters(jump_means=jump_means, jump_variances=jump_variances, tau=tau, selected_maturities=selected_maturities)
         fixed_params.update({'nu': nu, 'delta': delta})
@@ -77,41 +77,33 @@ def generate_130_point_iv_surface(spot_price, moneyness_grid, tau_grid, jumps_nu
             
             option = get_option_with_bates(OptionParams(strike=strike, tau=tau, evaluation_date=evaluation_date, engine=bates_engine))
             
-            try:
-                market_price = option.NPV()
-                forward_price = spot_price*np.exp((interest_rate - dividend_rate)* tau/365)
-                implied_vol = calculate_implied_volatility_approx(
-                    Cm=market_price,
-                    K=strike,
-                    T=tau / 365,
-                    F=forward_price,
-                    r=interest_rate,
-                )
-                iv_surface.append(implied_vol)  
+            market_price = option.NPV()
+            forward_price = spot_price*np.exp((interest_rate - dividend_rate)* tau/365)
+            implied_vol = calculate_implied_volatility_approx(
+                Cm=market_price,
+                K=strike,
+                T=tau / 365,
+                F=forward_price,
+                r=interest_rate,
+            )
+            if np.isnan(implied_vol):
+                raise Exception(f"Cm: {market_price}, K: {strike}, tai: {tau}, F: {forward_price}, r: {interest_rate}, implied_vol {implied_vol}")
+            iv_surface.append(implied_vol)  
 
-            except RuntimeError as e:
-                logger.error(e)
-                error = True
-                break
-        if error:
-            break
-
-    if error:
-        data_point.update({'implied_vol_surface': None})
-    else:
-        data_point.update({'implied_vol_surface': iv_surface})
+    data_point.update({'implied_vol_surface': iv_surface})
               
     return data_point
 
 
 # Generate implied volatility surface
-def generate_custom_130_point_iv_surface(params: GenerationParams, jumps_number=1):
-    
+def generate_custom_130_point_iv_surface(params: GenerationParams):
+    assert len(params.nu) == len(params.delta), "nu and delta must have the same length"
+    jumps_number = len(params.nu)
     # Choose 5 maturities at random for when the jumps will happen respecting the piecewise constant function between adjacent maturities
     # NOTE: Inherent concentration of jumps on smaller maturities because of how we sampled the maturities in the first place
     selected_maturities = np.append(np.sort(rng.choice(params.tau_grid, size=jumps_number-1, replace=False)), 440) 
     
-    jump_means, jump_variances = np.array([params.nu]), np.array([params.delta])
+    jump_means, jump_variances = params.nu, params.delta
     
     interest_rate = params.r
     dividend_rate = params.q
@@ -167,21 +159,18 @@ def generate_custom_130_point_iv_surface(params: GenerationParams, jumps_number=
             
             option = get_option_with_bates(OptionParams(strike=strike, tau=tau, evaluation_date=evaluation_date, engine=bates_engine))
             
-            try:
-                market_price = option.NPV()
-                forward_price = params.spot_price*np.exp((interest_rate - dividend_rate)* tau/365.0)
-                implied_vol = calculate_implied_volatility_approx(
-                    Cm=market_price,
-                    K=strike,
-                    T=tau / 365,
-                    F=forward_price,
-                    r=interest_rate,
-                )
-                iv_surface.append(implied_vol)   
-
-            except RuntimeError:
-                iv_surface.append(np.nan)  # Handle exceptions gracefully
-                print("error")
+            market_price = option.NPV()
+            forward_price = params.spot_price*np.exp((interest_rate - dividend_rate)* tau/365.0)
+            implied_vol = calculate_implied_volatility_approx(
+                Cm=market_price,
+                K=strike,
+                T=tau / 365,
+                F=forward_price,
+                r=interest_rate,
+            )
+            if np.isnan(implied_vol):
+                raise Exception("NAN")
+            iv_surface.append(implied_vol)   
 
     data_point.update({'implied_vol_surface': iv_surface})
               

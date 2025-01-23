@@ -10,24 +10,23 @@ class NN1Residual(pl.LightningModule):
         self.save_hyperparameters()
         self.mse_loss = nn.MSELoss()
         self.r2Score = R2Score(adjusted=input_dim)  # Assuming all regressors independent
-        self.activation = nn.ELU()
         self.lr = lr
         
         # Input Layer
         self.input_head = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),  # We have 41 financial parameters,
-            self.activation)
+            nn.ELU())
         
         # Hidden block 
         self.hidden_residual_block = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
-            self.activation,
+            nn.ELU(),
             nn.Linear(hidden_dim, hidden_dim),
-            self.activation,
+            nn.ELU(),
             nn.Linear(hidden_dim, hidden_dim),
-            self.activation,
+            nn.ELU(),
             nn.Linear(hidden_dim, hidden_dim),
-            self.activation
+            nn.ELU()
         )
         
         # Output layer
@@ -41,7 +40,7 @@ class NN1Residual(pl.LightningModule):
         x = self.hidden_residual_block(residual) + residual
         
         # Output with final activation?
-        return self.output_layer(self.activation(x))
+        return self.output_layer(nn.ELU()(x))
     
     def training_step(self, batch, batch_idx):
         inputs, targets = batch

@@ -16,8 +16,8 @@ class GenerationParams:
     rho: float  # Correlation between Brownian motions
     lambda_p: float  # Poisson jump rate
     spot_price: float  # Underlying asset spot price
-    nu: float
-    delta: float
+    nu: NDArray[np.float64]
+    delta: NDArray[np.float64]
     
     # Maturity and moneyness grids
     tau_grid: NDArray[np.uint16]  # List of time-to-maturities (in days)
