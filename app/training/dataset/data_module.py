@@ -31,13 +31,14 @@ class IVS_DataModule(L.LightningDataModule):
         self.val_split = val_split
         self.random_seed = random_seed
         self.ivs_size = ivs_size
+        self.min_max_scaler = MinMaxScaler()  # To be accessed for further Testing in the recalibration algorithm
 
     def prepare_data(self):
         # Load and preprocess the dataset
         self.data = pl.read_parquet(self.data_dir)
 
         # Extract and Normalize features to (0, 1)  
-        self.features = torch.from_numpy(MinMaxScaler().fit_transform(self.data.drop("implied_vol_surface").to_numpy()))
+        self.features = torch.from_numpy(self.min_max_scaler.fit_transform(self.data.drop("implied_vol_surface").to_numpy()))
         
         self.targets = torch.from_numpy(self.data["implied_vol_surface"].to_numpy())  # Known Size of 130        
         

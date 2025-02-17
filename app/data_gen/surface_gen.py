@@ -1,9 +1,7 @@
-from logging.handlers import WatchedFileHandler
 from typing import Any, Dict
 from logging import Logger
 
 from QuantLib import Date, Settings, Actual365Fixed, FlatForward, YieldTermStructureHandle
-from numpy import isnan
 
 from app.data_gen.models import GenerationParams
 from app.data_gen.quantlib_setup.engine_setup import get_bates_engine

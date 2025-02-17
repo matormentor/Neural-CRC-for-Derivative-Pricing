@@ -1,11 +1,12 @@
-import pytorch_lightning as pl
+import pytorch_lightning as L
 import torch
 from torchmetrics import R2Score
 
+import app.training.networks as net
 
 # Combined model NN3 (Training through NN1 -> NN2)
-class NN3(pl.LightningModule):
-    def __init__(self, nn1: pl.LightningModule, nn2: pl.LightningModule, lr=1e-3):
+class NN3(L.LightningModule):
+    def __init__(self, nn1: net.NN1Residual, nn2: net.NN2, lr=1e-3):
         super(NN3, self).__init__()
         self.save_hyperparameters(ignore=['nn1', 'nn2'])
         self.lr = lr

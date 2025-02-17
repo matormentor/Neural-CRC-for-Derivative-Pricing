@@ -1,10 +1,10 @@
 import torch.nn as nn
 from torch.optim import Adam
-import pytorch_lightning as pl
+import pytorch_lightning as L
 from torchmetrics import R2Score
 
 # NN1 with residual connections (mapping parameters -> IVS)
-class NN1Residual(pl.LightningModule):
+class NN1Residual(L.LightningModule):
     def __init__(self, input_dim=41, hidden_dim=1024, output_dim=130, lr=1e-3):
         super(NN1Residual, self).__init__()
         self.save_hyperparameters()
@@ -31,7 +31,7 @@ class NN1Residual(pl.LightningModule):
         
         # Output layer
         self.output_layer = nn.Linear(hidden_dim, output_dim)  # 130 IVS points
-
+        
     def forward(self, x):
         # Input
         residual = self.input_head(x)

@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-import pytorch_lightning as pl
+import pytorch_lightning as L
 
 class StretchedSigmoid(nn.Module):
     """
@@ -15,7 +15,7 @@ class StretchedSigmoid(nn.Module):
         return self.min_value + (self.max_value - self.min_value) * torch.sigmoid(x)
     
 
-class NN2(pl.LightningModule):
+class NN2(L.LightningModule):
     def __init__(self,input_size=133, hidden_size=1024, output_size=10, lr=0.001):
         """
         A feedforward neural network with a residual block and additional processing layers. 

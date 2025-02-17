@@ -1,4 +1,3 @@
-
 from app.data_gen.quantlib_setup.models import BatesProcessParams
 
 from QuantLib import BatesProcess, BatesModel, BatesEngine, QuoteHandle, SimpleQuote

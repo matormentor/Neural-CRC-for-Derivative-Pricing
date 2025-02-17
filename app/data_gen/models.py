@@ -21,4 +21,4 @@ class GenerationParams:
     
     # Maturity and moneyness grids
     tau_grid: NDArray[np.uint16]  # List of time-to-maturities (in days)
-    moneyness_grid: NDArray[np.float32]  # List of moneyness levels
+    moneyness_grid: NDArray[np.float64]  # List of moneyness levels

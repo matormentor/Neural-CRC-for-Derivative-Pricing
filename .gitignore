@@ -2,10 +2,15 @@
 # pixi environments
 .pixi
 *.egg-info
-venv/
+venv-math/
 **/__pycache__/
 .vscode
 data/
 *.parquet
 *.csv
 lightning_logs/
+models/
+*.svg
+*.png
+*.pdf
+plots/

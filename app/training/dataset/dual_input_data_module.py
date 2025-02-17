@@ -3,7 +3,6 @@ from torch.utils.data import random_split, Dataset, DataLoader
 import torch
 from sklearn.preprocessing import MinMaxScaler
 import polars as pl
-import numpy as np
 
 
 class DualInput_IVS_Dataset(Dataset):
@@ -34,6 +33,9 @@ class DualInput_IVS_DataModule(L.LightningDataModule):
         self.test_split = test_split
         self.val_split = val_split
         self.random_seed = random_seed
+        # Normalize Features separately
+        self.scaler1 = MinMaxScaler()  # To be accessed for further Testing in the recalibration algorithm 
+        self.scaler2 = MinMaxScaler()  # To be accessed for further Testing in the recalibration algorithm
 
     def prepare_data(self):
         self.data = pl.read_parquet(self.data_dir)
@@ -44,13 +46,9 @@ class DualInput_IVS_DataModule(L.LightningDataModule):
         # Input2
         features2 = self.data.drop(input2_drops).to_numpy()
         
-        # Normalize features separately
-        scaler1 = MinMaxScaler()
-        scaler2 = MinMaxScaler()
-
         # scale only the other parameters, leave IVS unchanged
         part_features1 = torch.from_numpy(
-            scaler1.fit_transform(self.data.select(input1_columns).to_numpy()))
+            self.scaler1.fit_transform(self.data.select(input1_columns).to_numpy()))
         
         # Input1 includes the first three columns + implied_vol_surface
         self.features1 = torch.cat(
@@ -59,7 +57,7 @@ class DualInput_IVS_DataModule(L.LightningDataModule):
             dim=1
         )
         self.features2 = torch.from_numpy(
-            scaler2.fit_transform(features2))
+            self.scaler2.fit_transform(features2))
         
         self.targets = torch.from_numpy(self.data["implied_vol_surface"].to_numpy())
 
